@@ -1,0 +1,179 @@
+<!doctype html>
+
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tic-Tac-Toe — Analógico Neon</title>
+  <style>
+    body {
+      background: #0f1221;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .game {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5%;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+    }
+    .cell {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #1a1f3a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.8rem, 10vw, 3rem);
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 10px;
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .cell span {
+      opacity: 0;
+      animation: flicker-in 0.6s forwards;
+    }
+    .cell.remove span {
+      animation: flicker-out 0.6s forwards;
+    }
+    .X {
+      color: #9d5cff;
+      text-shadow: 0 0 8px #9d5cff, 0 0 16px #9d5cff, 0 0 32px #9d5cff;
+    }
+    .O {
+      color: #24ffd1;
+      text-shadow: 0 0 8px #24ffd1, 0 0 16px #24ffd1, 0 0 32px #24ffd1;
+    }@keyframes flicker-in {
+  0% { opacity: 0; text-shadow: none; }
+  20% { opacity: 1; text-shadow: 0 0 5px rgba(255,255,255,.4); }
+  40% { opacity: .2; text-shadow: none; }
+  60% { opacity: 1; text-shadow: 0 0 12px currentColor, 0 0 24px currentColor; }
+  80% { opacity: .7; text-shadow: 0 0 6px currentColor; }
+  100% { opacity: 1; text-shadow: 0 0 8px currentColor, 0 0 16px currentColor, 0 0 32px currentColor; }
+}
+
+@keyframes flicker-out {
+  0% { opacity: 1; }
+  20% { opacity: .3; }
+  40% { opacity: 1; }
+  60% { opacity: .4; }
+  80% { opacity: .2; }
+  100% { opacity: 0; }
+}
+
+.status { margin-top: 20px; text-align: center; font-size: clamp(1rem, 3vw, 1.2rem); }
+
+  </style>
+</head>
+<body>
+  <div class="game">
+    <div class="board" id="board"></div>
+    <div class="status" id="status"></div>
+  </div>  <script>
+    const boardEl = document.getElementById("board");
+    const statusEl = document.getElementById("status");
+
+    const LINES = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    let state, turn, winner;
+    let history;
+
+    function newGame() {
+      state = Array(9).fill("");
+      turn = "X";
+      winner = null;
+      history = { X: [], O: [] };
+      renderBoard();
+      updateStatus();
+    }
+
+    function renderBoard(removeIdx = null) {
+      boardEl.innerHTML = "";
+      state.forEach((val, idx) => {
+        const cell = document.createElement("div");
+        cell.className = "cell" + (winner ? " disabled" : "");
+        cell.dataset.idx = idx;
+        if (val) {
+          const symbol = document.createElement("span");
+          symbol.textContent = val;
+          symbol.className = val;
+          if (idx === removeIdx) {
+            cell.classList.add("remove");
+          }
+          cell.appendChild(symbol);
+        }
+        cell.addEventListener("click", onCellClick);
+        boardEl.appendChild(cell);
+      });
+    }
+
+    function onCellClick(e) {
+      const idx = Number(e.currentTarget.dataset.idx);
+      if (winner || state[idx]) return;
+
+      state[idx] = turn;
+      history[turn].push(idx);
+
+      if (history[turn].length > 3) {
+        const removeIdx = history[turn].shift();
+        state[removeIdx] = "";
+        renderBoard(removeIdx);
+      } else {
+        renderBoard();
+      }
+
+      const win = getWinner();
+      if (win) {
+        endGame(win);
+      } else {
+        turn = turn === "X" ? "O" : "X";
+        updateStatus();
+      }
+    }
+
+    function getWinner() {
+      for (const [a,b,c] of LINES) {
+        if (state[a] && state[a] === state[b] && state[a] === state[c]) {
+          return { player: state[a], line: [a,b,c] };
+        }
+      }
+      return null;
+    }
+
+    function endGame(win) {
+      winner = win.player;
+      updateStatus(true);
+    }
+
+    function updateStatus(finished = false) {
+      if (!winner) {
+        statusEl.textContent = `Vez de ${turn}`;
+      } else {
+        statusEl.textContent = `Vitória de ${winner}!`;
+      }
+    }
+
+    newGame();
+  </script></body>
+</html>
